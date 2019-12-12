@@ -1,5 +1,5 @@
 const express = require ("express");
-const fs = require ("fs")
+const fs = require ("fs-extra")
 const path = require("path")
 
 
@@ -10,19 +10,20 @@ const router = express.Router()
 
 const studentsFilePath = path.join(__dirname, "students.json");
 
-const readFile = ()=>{
-  const buffer = fs.readFileSync(studentsFilePath)  
+const readFile = async()=>{
+  const buffer = await fs.readFile(studentsFilePath)  
   const content = buffer.toString();
   return JSON.parse(content)
 }
 
-router.get("/", (req,res)=>{
-    res.send(readFile())
+router.get("/", async (req,res)=>{
+    const allStudents = await readFile()
+    res.send(allStudents)
 })
 
 
-router.get("/:id", (req,res)=>{
-    let students = readFile();
+router.get("/:id", async (req,res)=>{
+    let students = await readFile();
 
     let student = students.find(x => x._id == req.params.id)
     if(student){
@@ -34,8 +35,8 @@ router.get("/:id", (req,res)=>{
 })
 
 
-router.post("/", (req,res) => {
-    let previousStudents = readFile();
+router.post("/", async (req,res) => {
+    let previousStudents = await readFile();
 
     if(previousStudents.find(student => student.email == req.body.email))
         res.status(500).send("Cannot create: email already in use")
@@ -45,13 +46,13 @@ router.post("/", (req,res) => {
     req.body._id = previousStudents.length + 1;
     req.body.creationTime = new Date()
     previousStudents.push(req.body)
-    fs.writeFileSync(studentsFilePath, JSON.stringify(previousStudents));
+    await fs.writeFile(studentsFilePath, JSON.stringify(previousStudents));
      res.send({ _id: req.body._id })
  })
  
  
-router.put("/:id", (req,res) => {
-   let  students = readFile()
+router.put("/:id", async (req,res) => {
+   let  students = await readFile()
     
     let student = students.find(x => x._id == req.params.id)
     if(student){
@@ -60,7 +61,7 @@ router.put("/:id", (req,res) => {
         // students[req.params.id - 1] = mergedStudent
         let position = students.indexOf(student)
         students[position] = mergedStudent
-        fs.writeFileSync(studentsFilePath, JSON.stringify(students));
+        await fs.writeFile(studentsFilePath, JSON.stringify(students));
         res.send(mergedStudent)
     }
     else {
@@ -72,7 +73,7 @@ router.put("/:id", (req,res) => {
 })
 
 
-router.delete("/:id", (req,res)=>{
+router.delete("/:id", async (req,res)=>{
     let students = readFile();
 
     let studentsToRemain = students.filter(x => x._id != req.params.id)
@@ -81,7 +82,7 @@ router.delete("/:id", (req,res)=>{
         //remove
         //return 200
 
-        fs.writeFileSync(studentsFilePath, JSON.stringify(studentsToRemain));
+        await fs.writeFile(studentsFilePath, JSON.stringify(studentsToRemain));
         res.send("Removed");
 
     }
@@ -92,8 +93,8 @@ router.delete("/:id", (req,res)=>{
 })
 
 
-router.post("/checkEmail/:email", (req,res) => {
-    let students = readFile();
+router.post("/checkEmail/:email", async (req,res) => {
+    let students = await readFile();
 
     res.send(students.find(student => student.email == req.params.email) 
     ? "Email in use" 
