@@ -4,9 +4,11 @@ const server = express();
 
 const indexService = require("./src/services/")
 
+const cors = require("cors")
 
-server.use(express.json())
-server.use("/students", indexService)
+server.use(express.json());
+server.use("/students", indexService);
+server.use(cors());
 
 
 
